@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PulseAid - Advanced Emergency Assistant</title>
+    <link href="https://cdn.tailwindcss.com" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.tailwindcss.com" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/blazeface"></script>
+   <style>
+    :root {
+   --primary-color: #e74c3c;
+   --secondary-color: #3498db;
+   --accent-color: #2ecc71;
+   --background-color: #f9f9f9;
+   --card-color: #ffffff;
+   --text-color: #2c3e50;
+   --danger-color: #c0392b;
+}
+
+* {
+   margin: 0;
+   padding: 0;
+   box-sizing: border-box;
+}
+
+body {
+   font-family: 'Poppins', sans-serif;
+   line-height: 1.6;
+   background-color: var(--background-color);
+   color: var(--text-color);
+   padding: 20px;
+}
+
+.container {
+   max-width: 800px;
+   margin: 0 auto;
+}
+
+/* Medical Symbol Animation */
+.medical-symbol {
+   position: relative;
+   width: 100px;
+   height: 100px;
+   display: flex;
+   justify-content: center;
+   align-items: center;
+   margin: 0 auto;
+}
+
+.medical-symbol::before,
+.medical-symbol::after {
+   content: '';
+   position: absolute;
+   background-color: var(--primary-color);
+}
+
+.medical-symbol::before {
+   width: 60px;
+   height: 10px;
+   top: 50%;
+   left: 50%;
+   transform: translate(-50%, -50%);
+   animation: pulse-horizontal 2s infinite;
+}
+
+.medical-symbol::after {
+   width: 10px;
+   height: 60px;
+   top: 50%;
+   left: 50%;
+   transform: translate(-50%, -50%);
+   animation: pulse-vertical 2s infinite;
+}
+
+@keyframes pulse-horizontal {
+   0%, 100% { transform: translate(-50%, -50%) scale(1); }
+   50% { 
+      transform: translate(-50%, -50%) scale(1.2); 
+      background-color: var(--secondary-color);
+   }
+}
+
+@keyframes pulse-vertical {
+   0%, 100% { transform: translate(-50%, -50%) scale(1); }
+   50% { 
+      transform: translate(-50%, -50%) scale(1.2); 
+      background-color: var(--accent-color);
+   }
+}
+
+/* Animated Header */
+header {
+   text-align: center;
+   margin-bottom: 2rem;
+   padding: 1rem;
+   animation: fadeInDown 0.8s ease-out;
+}
+
+.logo {
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   gap: 1rem;
+   margin-bottom: 1rem;
+}
+
+.logo-icon {
+   font-size: 2.5rem;
+   animation: heartbeat 2s infinite;
+}
+
+@keyframes heartbeat {
+   0%, 100% { transform: scale(1); }
+   50% { transform: scale(1.1); }
+}
+
+h1 {
+   color: var(--primary-color);
+   font-size: 2.5rem;
+   margin-bottom: 0.5rem;
+   position: relative;
+}
+
+h1::after {
+   content: '';
+   position: absolute;
+   bottom: -5px;
+   left: 50%;
+   transform: translateX(-50%);
+   width: 60px;
+   height: 3px;
+   background-color: var(--primary-color);
+   border-radius: 2px;
+}
+
+/* Emergency Selection Styling (Kept close to original) */
+#emergency-type {
+   width: 100%;
+   padding: 1rem;
+   border: 2px solid #e0e0e0;
+   border-radius: 8px;
+   font-size: 1rem;
+   transition: all 0.3s ease;
+}
+
+#emergency-type:focus {
+   outline: none;
+   border-color: var(--secondary-color);
+   box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+}
+
+/* Buttons */
+.btn {
+   background: linear-gradient(45deg, var(--secondary-color), #2980b9);
+   color: white;
+   padding: 1rem 2rem;
+   border: none;
+   border-radius: 8px;
+   font-size: 1rem;
+   font-weight: bold;
+   cursor: pointer;
+   transition: all 0.3s ease;
+   width: 100%;
+   position: relative;
+   overflow: hidden;
+}
+
+.btn:hover {
+   transform: translateY(-2px);
+   box-shadow: 0 5px 15px rgba(41, 128, 185, 0.3);
+}
+
+.btn:active {
+   transform: translateY(0);
+}
+
+/* Symptom Chips (Kept from original) */
+.symptoms-grid {
+   display: grid;
+   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+   gap: 1rem;
+   margin-top: 1rem;
+}
+
+.symptom-chip {
+   background-color: #f0f0f0;
+   padding: 0.8rem 1rem;
+   border-radius: 20px;
+   text-align: center;
+   cursor: pointer;
+   transition: all 0.3s ease;
+   position: relative;
+   overflow: hidden;
+}
+
+.symptom-chip:hover {
+   background-color: var(--secondary-color);
+   color: white;
+   transform: translateY(-2px);
+   box-shadow: 0 4px 12px rgba(52, 152, 219, 0.2);
+}
+
+/* Emergency Instruction Animation */
+.result-section {
+   margin-top: 2rem;
+   padding-top: 2rem;
+   border-top: 2px solid #eee;
+   animation: fadeIn 0.5s ease-out;
+}
+
+/* Loading Spinner */
+.loading-spinner {
+   display: none;
+   text-align: center;
+   margin: 1rem 0;
+}
+
+.loading-spinner::after {
+   content: "";
+   display: inline-block;
+   width: 30px;
+   height: 30px;
+   border: 3px solid #f3f3f3;
+   border-top: 3px solid var(--secondary-color);
+   border-radius: 50%;
+   animation: spin 1s linear infinite;
+}
+
+/* Severity Indicator */
+.severity-indicator {
+   display: flex;
+   gap: 1rem;
+   margin: 1rem 0;
+}
+
+.severity-btn {
+   flex: 1;
+   padding: 0.5rem;
+   border: none;
+   border-radius: 4px;
+   cursor: pointer;
+   transition: all 0.3s ease;
+}
+
+.severity-low { 
+   background-color: #2ecc71; 
+   color: white; 
+   animation: pulse-low 1.5s infinite;
+}
+
+.severity-medium { 
+   background-color: #f1c40f; 
+   color: white; 
+   animation: pulse-medium 1.5s infinite;
+}
+
+.severity-high { 
+   background-color: #e74c3c; 
+   color: white; 
+   animation: pulse-high 1.5s infinite;
+}
+
+/* Severity Button Animations */
+@keyframes pulse-low {
+   0%, 100% { transform: scale(1); }
+   50% { transform: scale(1.05); }
+}
+
+@keyframes pulse-medium {
+   0%, 100% { transform: scale(1); }
+   50% { transform: scale(1.1); }
+}
+
+@keyframes pulse-high {
+   0%, 100% { transform: scale(1); }
+   50% { transform: scale(1.15); }
+}
+
+/* Quick Tips Animation */
+.quick-tips {
+   background-color: #f8f9fa;
+   padding: 1rem;
+   border-radius: 8px;
+   margin-top: 1rem;
+   animation: slideInFromRight 0.5s ease-out;
+}
+
+@keyframes slideInFromRight {
+   from {
+       opacity: 0;
+       transform: translateX(100%);
+   }
+   to {
+       opacity: 1;
+       transform: translateX(0);
+   }
+}
+
+/* Global Animations */
+@keyframes fadeInDown {
+   from {
+       opacity: 0;
+       transform: translateY(-20px);
+   }
+   to {
+       opacity: 1;
+       transform: translateY(0);
+   }
+}
+
+@keyframes fadeInUp {
+   from {
+       opacity: 0;
+       transform: translateY(20px);
+   }
+   to {
+       opacity: 1;
+       transform: translateY(0);
+   }
+}
+
+@keyframes fadeIn {
+   from { opacity: 0; }
+   to { opacity: 1; }
+}
+
+@keyframes spin {
+   0% { transform: rotate(0deg); }
+   100% { transform: rotate(360deg); }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+   :root {
+       --background-color: #1a1a1a;
+       --card-color: #2c3e50;
+       --text-color: Black;
+   }
+
+   body {
+       background-color: var(--background-color);
+       color: var(--text-color);
+   }
+
+   .symptom-chip {
+       background-color: #34495e;
+       color: #ecf0f1;
+   }
+
+   #emergency-type {
+       background-color: #2c3e50;
+       color: #ecf0f1;
+       border-color: #34495e;
+   }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+   body { 
+       padding: 10px; 
+   }
+   
+   h1 { 
+       font-size: 2rem; 
+   }
+   
+   .symptoms-grid {
+       grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+   }
+}
+
+.pulse-icon {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .voice-active {
+            background-color: #ef4444 !important;
+            animation: listening 1.5s infinite;
+        }
+
+        @keyframes listening {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        #voiceStatus {
+            transition: all 0.3s ease;
+        }
+   </style>
+</head>
+    <body class="bg-gray-100">
+        <div class="container mx-auto px-4 py-8">
+            <header class="text-center mb-10 flex flex-col items-center">
+                <!-- New PulseAid Logo -->
+                <div class="mb-4">
+                    <svg class="w-16 h-16 pulse-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L2 12L12 22L22 12L12 2Z" fill="#ef4444"/>
+                        <path d="M9 12H15M12 9V15" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <h1 class="text-4xl font-bold text-red-600">PulseAid</h1>
+                <p class="text-xl text-gray-600">Your Voice-Enabled Emergency Assistant</p>
+            </header>
+    
+            <div class="max-w-2xl mx-auto bg-white shadow-lg rounded-xl overflow-hidden">
+                <div class="p-6">
+                    <!-- Voice Assistant Section -->
+                    <div class="text-center mb-8">
+                        <button id="voiceButton" class="p-4 bg-gray-100 rounded-full hover:bg-gray-200 transition-all">
+                            <i class="fas fa-microphone text-2xl text-red-500"></i>
+                        </button>
+                        <p id="voiceStatus" class="mt-2 text-gray-600">Click microphone to start voice assistant</p>
+                    </div>
+
+        <div class="max-w-2xl mx-auto bg-white shadow-lg rounded-xl overflow-hidden">
+            <div class="p-6">
+                <h2 class="text-2xl font-semibold mb-4">Select Emergency Type</h2>
+                <select id="emergency-type" class="w-full px-3 py-2 border rounded-lg">
+                    <option value="">Choose an Emergency</option>
+                    <option value="Bleeding">Bleeding</option>
+                    <option value="Nose Bleed">Nose Bleed</option>
+                    <option value="Minor burns">Minor Burns</option>
+                    <option value="Severe burns">Severe Burns</option>
+                    <option value="Asthma Attack">Asthma Attack</option>
+                    <option value="Choking">Choking</option>
+                    <option value="Heart Attack">Heart Attack</option>
+                    <option value="Cardiac Arrest">Cardiac Arrest</option>
+                    <option value="Bone Fracture">Bone Fracture</option>
+                    <option value="Sprain">Sprain</option>
+                    <option value="Ingestion of Poison">Ingestion of Poison</option>
+                    <option value="Heat Stroke">Heat Stroke</option>
+                    <option value="Hypothermia">Hypothermia</option>
+                    <option value="Epileptic Seizure">Epileptic Seizure</option>
+                    <option value="Anaphylaxis">Anaphylaxis</option>
+                    <option value="General Shock Symptoms">General Shock Symptoms</option>
+                    <option value="Fainting">Fainting</option>
+                    <option value="Headache">Headache</option>
+                    <option value="Body Pain">Body Pain</option>
+                    <option value="Dry Tongue">Dry Tongue</option>
+                    <option value="Stomach Pain">Stomach Pain</option>
+                    <option value="Low BP">Low BP</option>
+                    <option value="High BP">High BP</option>
+                    <option value="Low Sugar">Low Sugar</option>
+                    <option value="High Sugar">High Sugar</option>
+                    <option value="Pregnancy Pain">Pregnancy Pain</option>
+                    <option value="Menstrual Cycle">Menstrual Cycle</option>
+                </select>
+                <button id="get-help-btn" class="bg-red-500 text-white py-3 rounded-lg w-full mt-4">
+                    Get Immediate advice
+                </button>
+                <button id="find-hospitals-btn" class="bg-blue-500 text-white py-3 rounded-lg w-full mt-4">
+                    Find Nearby Hospitals
+                </button>
+            </div>
+        </div>
+
+        <div id="emergency-instructions" class="hidden mt-8">
+            <div class="bg-white shadow-lg rounded-xl p-6">
+                <h3 class="text-2xl font-bold text-red-600">Emergency Instructions</h3>
+                <ul id="instruction-content" class="list-disc pl-5 mt-4"></ul>
+            </div>
+        </div>
+
+        <div id="hospital-locations" class="hidden mt-8">
+            <div class="bg-white shadow-lg rounded-xl p-6">
+                <h3 class="text-2xl font-bold text-blue-600">Nearby Hospitals</h3>
+                <ul id="hospital-list" class="list-disc pl-5 mt-4"></ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+
+class VoiceAssistant {
+            constructor() {
+                this.recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+                this.synthesis = window.speechSynthesis;
+                this.isListening = false;
+                this.setupRecognition();
+            }
+
+            setupRecognition() {
+                this.recognition.continuous = false;
+                this.recognition.interimResults = false;
+                this.recognition.lang = 'en-US';
+
+                this.recognition.onstart = () => {
+                    this.isListening = true;
+                    document.getElementById('voiceButton').classList.add('voice-active');
+                    document.getElementById('voiceStatus').textContent = 'Listening...';
+                };
+
+                this.recognition.onend = () => {
+                    this.isListening = false;
+                    document.getElementById('voiceButton').classList.remove('voice-active');
+                    document.getElementById('voiceStatus').textContent = 'Click microphone to start voice assistant';
+                };
+
+                this.recognition.onresult = (event) => {
+                    const transcript = event.results[0][0].transcript.toLowerCase();
+                    document.getElementById('voiceStatus').textContent = `You said: ${transcript}`;
+                    this.processVoiceInput(transcript);
+                };
+
+                this.recognition.onerror = (event) => {
+                    console.error('Speech recognition error:', event.error);
+                    document.getElementById('voiceStatus').textContent = 'Error: Could not recognize speech. Please try again.';
+                };
+            }
+
+            startListening() {
+                if (!this.isListening) {
+                    this.recognition.start();
+                }
+            }
+
+            stopListening() {
+                if (this.isListening) {
+                    this.recognition.stop();
+                }
+            }
+
+            speak(text) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 0.9;
+                utterance.pitch = 1;
+                this.synthesis.speak(utterance);
+            }
+
+            processVoiceInput(transcript) {
+                // Map common phrases to emergency types
+                const emergencyMap = {
+                   'bleeding': 'Bleeding',
+    'cut': 'Bleeding',
+    'blood': 'Bleeding',
+    'burn': 'Minor burns',
+    'severe burn': 'Severe burns',
+    'chest pain': 'Heart Attack',
+    'heart attack': 'Heart Attack',
+    'choking': 'Choking',
+    'cant breathe': 'Choking',
+    'broken bone': 'Bone Fracture',
+    'fracture': 'Bone Fracture',
+    'nosebleed': 'Nose Bleed',
+    'nose bleed': 'Nose Bleed',
+    'asthma': 'Asthma Attack',
+    'difficulty breathing': 'Asthma Attack',
+    'fainting': 'Fainting',
+    'fainted': 'Fainting',
+    'sprain': 'Sprain',
+    'twisted ankle': 'Sprain',
+    'poison': 'Ingestion of Poison',
+    'heat stroke': 'Heat Stroke',
+    'hypothermia': 'Hypothermia',
+    'seizure': 'Epileptic Seizure',
+    'convulsions': 'Epileptic Seizure',
+    'allergy': 'Anaphylaxis',
+    'anaphylaxis': 'Anaphylaxis',
+    'shock': 'General Shock Symptoms',
+    'headache': 'Headache',
+    'migraine': 'Headache',
+    'body pain': 'Body Pain',
+    'dry tongue': 'Dry Tongue',
+    'stomach pain': 'Stomach Pain',
+    'low bp': 'Low BP',
+    'high bp': 'High BP',
+    'low sugar': 'Low Sugar',
+    'high sugar': 'High Sugar',
+    'pregnancy pain': 'Pregnancy Pain',
+    'menstrual cycle': 'Menstrual Cycle',
+                    // Add more mappings as needed
+                };
+
+                let emergencyType = null;
+                for (const [phrase, type] of Object.entries(emergencyMap)) {
+                    if (transcript.includes(phrase)) {
+                        emergencyType = type;
+                        break;
+                    }
+                }
+
+                if (emergencyType) {
+                    // Update the select element
+                    document.getElementById('emergency-type').value = emergencyType;
+                    // Trigger the get help button
+                    document.getElementById('get-help-btn').click();
+                    
+                    // Get the instructions
+                    const instructions = emergencyInstructions[emergencyType];
+                    if (instructions) {
+                        // Speak the instructions
+                        this.speak(`For ${emergencyType}, here are the steps: ${instructions.join('. ')}`);
+                    }
+                } else {
+                    this.speak("I'm sorry User, I couldn't identify the emergency type. Please try again or use the dropdown menu to select your emergency.");
+                }
+            }
+        }
+
+        // Initialize voice assistant
+        const voiceAssistant = new VoiceAssistant();
+
+        // Add click handler for voice button
+        document.getElementById('voiceButton').addEventListener('click', () => {
+            voiceAssistant.startListening();
+        });
+
+        // Rest of your existing JavaScript code...
+        // (Keep all the existing emergency instructions and hospital finding code)
+
+        document.getElementById('get-help-btn').addEventListener('click', async function () {
+            const emergencyType = document.getElementById('emergency-type').value;
+            const instructionsDiv = document.getElementById('emergency-instructions');
+            const contentDiv = document.getElementById('instruction-content');
+
+            const emergencyInstructions = {
+            "Bleeding": [
+                "Apply pressure to the wound with a clean cloth.",
+                "Elevate the injured area above heart level.",
+                "Seek medical help if bleeding does not stop."
+            ],
+            "Nose Bleed": [
+                "Sit upright and lean forward.",
+                "Pinch the nostrils together for 10 minutes.",
+                "Apply a cold compress to the bridge of the nose."
+            ],
+            "Minor burns": [
+                "Cool the burn with running water for 10-15 minutes.",
+                "Cover with a clean, non-stick dressing.",
+                "Avoid applying ice directly to the burn."
+            ],
+            "Severe burns": [
+                "Call emergency services immediately.",
+                "Do not remove clothing stuck to the burn.",
+                "Cover with a sterile dressing."
+            ],
+            "Asthma Attack": [
+                "Assist the person with their inhaler (2 puffs, 1 minute apart).",
+                "Keep them calm and upright.",
+                "Call emergency services if breathing does not improve."
+            ],
+            "Choking": [
+                "Perform the Heimlich maneuver if the person cannot breathe.",
+                "Encourage coughing if they can still breathe.",
+                "Call emergency services if choking persists."
+            ],
+            "Heart Attack": [
+                "Call emergency services immediately.",
+                "Have the person sit or lie down comfortably.",
+                "Offer aspirin if not allergic, and help them chew it.",
+                "Perform CPR if necessary."
+            ],
+            "Cardiac Arrest": [
+                "Call emergency services immediately.",
+                "Begin CPR (30 chest compressions followed by 2 rescue breaths).",
+                "Use an Automated External Defibrillator (AED) if available."
+            ],
+            "Bone Fracture": [
+                "Immobilize the injured area using a splint or padding.",
+                "Do not attempt to realign the bone.",
+                "Apply ice packs to reduce swelling."
+            ],
+            "Sprain": [
+                "Rest the injured area.",
+                "Apply ice to reduce swelling.",
+                "Compress the area with an elastic bandage.",
+                "Elevate the injured limb above heart level."
+            ],
+            "Ingestion of Poison": [
+                "Identify the substance ingested and call poison control or emergency services.",
+                "Do not induce vomiting unless instructed to do so.",
+                "Monitor their breathing and provide CPR if necessary."
+            ],
+            "Heat Stroke": [
+                "Move the person to a cool, shaded area.",
+                "Remove excess clothing and cool them with wet cloths or cold packs.",
+                "Call emergency services immediately."
+            ],
+            "Hypothermia": [
+                "Move the person to a warm, dry area.",
+                "Cover them with blankets or warm clothing.",
+                "Avoid direct heat sources or rubbing the skin."
+            ],
+            "Epileptic Seizure": [
+                "Protect the person from injury by moving objects away.",
+                "Do not restrain them or place anything in their mouth.",
+                "Turn them onto their side to keep the airway clear."
+            ],
+            "Anaphylaxis": [
+                "Administer an epinephrine injection if available.",
+                "Call emergency services immediately.",
+                "Keep the person lying down and elevate their legs."
+            ],
+            "General Shock Symptoms": [
+                "Lay the person flat on their back.",
+                "Elevate their legs slightly unless there is an injury.",
+                "Keep them warm and comfortable.",
+                "Call emergency services immediately."
+            ],
+            "Fainting": [
+                "Lay the person flat and elevate their legs.",
+                "Loosen tight clothing.",
+                "Check for breathing and pulse."
+            ],
+            "Headache": [
+                "Encourage the person to rest in a quiet, dark place.",
+                "Apply a cool compress to their forehead.",
+                "Offer over-the-counter pain relievers like ibuprofen."
+            ],
+            "Body Pain": [
+                "Encourage rest and relaxation.",
+                "Apply heat or cold packs to the affected area.",
+                "Offer over-the-counter pain relievers."
+            ],
+            "Dry Tongue": [
+                "Encourage the person to drink plenty of water.",
+                "Avoid caffeine and alcohol.",
+                "Seek medical advice if the dryness persists."
+            ],
+            "Stomach Pain": [
+                "Have the person rest in a comfortable position.",
+                "Offer small sips of water or clear fluids.",
+                "Avoid solid foods until the pain subsides."
+            ],
+            "Low BP": [
+                "Lay the person flat and elevate their legs.",
+                "Keep them warm and comfortable.",
+                "Offer small sips of water or electrolyte drinks."
+            ],
+            "High BP": [
+                "Encourage the person to sit down and relax.",
+                "Help them take prescribed medications if available.",
+                "Avoid caffeine and salty foods."
+            ],
+            "Low Sugar": [
+                "Offer a sugary drink, candy, or glucose tablets immediately.",
+                "Encourage the person to rest until symptoms improve.",
+                "Seek medical attention if symptoms persist."
+            ],
+            "High Sugar": [
+                "Encourage hydration with water to reduce sugar concentration.",
+                "Help the person take prescribed insulin or medications.",
+                "Seek medical attention if symptoms worsen."
+            ],
+            "Pregnancy Pain": [
+                "Encourage rest in a comfortable position.",
+                "Apply a warm compress to the back or lower abdomen.",
+                "Seek medical advice if pain is severe."
+            ],
+            "Menstrual Cycle": [
+                "Encourage rest and relaxation.",
+                "Apply a hot water bottle or heating pad to the lower abdomen.",
+                "Offer over-the-counter pain relievers like ibuprofen."
+            ]
+        };
+
+            if (emergencyType && emergencyInstructions[emergencyType]) {
+                contentDiv.innerHTML = emergencyInstructions[emergencyType]
+                    .map(inst => `<li>${inst}</li>`)
+                    .join('');
+                instructionsDiv.classList.remove('hidden');
+            } else {
+                alert('Please select a valid emergency type.');
+            }
+        });
+
+        document.getElementById('find-hospitals-btn').addEventListener('click', function () {
+    // Show loading state
+    const hospitalLocations = document.getElementById('hospital-locations');
+    const hospitalList = document.getElementById('hospital-list');
+    hospitalList.innerHTML = '<li>Searching for nearby hospitals...</li>';
+    hospitalLocations.classList.remove('hidden');
+
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            async function (position) {
+                const { latitude, longitude } = position.coords;
+
+                try {
+                    console.log(`Fetching hospitals for coordinates: ${latitude}, ${longitude}`);
+
+                    // SIMULATED HOSPITAL FINDING PROCESS
+                    // Instead of fetching from server, directly populate with predefined hospitals
+                    const mockHospitals = [
+                    {
+                name: "Nanjappa Life Care, Shivamogga", 
+                distance: "3.4 km",
+                mapUrl: "https://maps.app.goo.gl/WvBmsx4TcHB212Bi9"
+            },
+            {
+                name: "MC Gann Hospital, Shivamogga", 
+                distance: "6.9 km",
+                mapUrl: "https://maps.app.goo.gl/1yC4Bd3DEkTBGFMX6"
+            },
+            {
+                name: "Metro Hospital, Shivamogga", 
+                distance: "7.6 km",
+                mapUrl: "https://maps.app.goo.gl/yEeUEf2sk66K3L9q8"
+            }
+                    ];
+
+                    hospitalList.innerHTML = mockHospitals
+                        .map(hospital => 
+                            `<li>
+                                ${hospital.name} - ${hospital.distance} away 
+                                <a href="${hospital.mapUrl}" target="_blank" rel="noopener noreferrer">
+                                    (View on Google Maps)
+                                </a>
+                            </li>`
+                        )
+                        .join('');
+
+                } catch (error) {
+                    console.error('Error finding hospitals:', error);
+                    hospitalList.innerHTML = `<li>Failed to find hospitals. Error: ${error.message}. Please try again later.</li>`;
+                }
+            },
+            function (error) {
+                console.error('Geolocation error:', error);
+                const hospitalList = document.getElementById('hospital-list');
+                hospitalList.innerHTML = `<li>Location access failed: ${error.message}. Please check your location settings.</li>`;
+            },
+            {
+                // Geolocation options
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            }
+        );
+    } else {
+        const hospitalList = document.getElementById('hospital-list');
+        hospitalList.innerHTML = '<li>Geolocation is not supported by your browser.</li>';
+    }
+});  </script>
+</body>
+</html>
+
+
+
